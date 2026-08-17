@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Letras Cast</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body { font-family: sans-serif; background-color: #121212; color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
+        #setup { display: flex; flex-direction: column; flex-grow: 1; }
+        textarea { flex-grow: 1; padding: 15px; border-radius: 8px; border: none; font-size: 16px; margin-bottom: 15px; background-color: #1e1e1e; color: white; resize: none; }
+        button { padding: 15px; background-color: #007bff; color: white; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; font-weight: bold; }
+        #presentation { display: none; flex-direction: column; justify-content: center; align-items: center; height: 100vh; position: absolute; top: 0; left: 0; width: 100%; background-color: black; text-align: center; padding: 20px; box-sizing: border-box; }
+        #slideText { font-size: 6vh; font-weight: bold; line-height: 1.4; }
+        .controls { position: absolute; bottom: 30px; display: flex; gap: 20px; }
+        .controls button { background-color: #333; padding: 15px 30px; }
+        .close-btn { position: absolute; top: 20px; right: 20px; background-color: red; padding: 10px 20px; }
+    </style>
+</head>
+<body>
+
+    <div id="setup">
+        <h2>Cole a letra da música:</h2>
+        <textarea id="lyricsInput" placeholder="Cole os versos aqui. Pule uma linha para separar os slides..."></textarea>
+        <button onclick="startPresentation()">Iniciar Apresentação</button>
+    </div>
+
+    <div id="presentation">
+        <button class="close-btn" onclick="exitPresentation()">Sair</button>
+        <div id="slideText"></div>
+        <div class="controls">
+            <button onclick="prevSlide()">&#8592; Anterior</button>
+            <button onclick="nextSlide()">Próximo &#8594;</button>
+        </div>
+    </div>
+
+    <script>
+        let slides = [];
+        let currentSlide = 0;
+
+        function startPresentation() {
+            const text = document.getElementById('lyricsInput').value;
+            // Divide o texto por quebras de linha duplas (parágrafos)
+            slides = text.split(/\n\s*\n/).filter(s => s.trim() !== '');
+            if (slides.length === 0) return alert('Por favor, insira alguma letra.');
+            
+            currentSlide = 0;
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('presentation').style.display = 'flex';
+            updateSlide();
+            
+            // Coloca a tela em Fullscreen (ideal para Smart View/Chromecast)
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            }
+        }
+
+        function updateSlide() {
+            document.getElementById('slideText').innerText = slides[currentSlide];
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        function exitPresentation() {
+            document.getElementById('presentation').style.display = 'none';
+            document.getElementById('setup').style.display = 'flex';
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            }
+        }
+
+        // Registrar o Service Worker para funcionar offline
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>
