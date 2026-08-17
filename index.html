@@ -10,11 +10,9 @@
         #setup { display: flex; flex-direction: column; flex-grow: 1; }
         textarea { flex-grow: 1; padding: 15px; border-radius: 8px; border: none; font-size: 16px; margin-bottom: 15px; background-color: #1e1e1e; color: white; resize: none; }
         button { padding: 15px; background-color: #007bff; color: white; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; font-weight: bold; }
-        #presentation { display: none; flex-direction: column; justify-content: center; align-items: center; height: 100vh; position: absolute; top: 0; left: 0; width: 100%; background-color: black; text-align: center; padding: 20px; box-sizing: border-box; }
+        #presentation { display: none; flex-direction: column; justify-content: center; align-items: center; height: 100vh; position: absolute; top: 0; left: 0; width: 100%; background-color: black; text-align: center; padding: 40px; box-sizing: border-box; }
         #slideText { font-size: 6vh; font-weight: bold; line-height: 1.4; }
-        .controls { position: absolute; bottom: 30px; display: flex; gap: 20px; }
-        .controls button { background-color: #333; padding: 15px 30px; }
-        .close-btn { position: absolute; top: 20px; right: 20px; background-color: red; padding: 10px 20px; }
+        .close-btn { position: absolute; top: 20px; right: 20px; background-color: #333; padding: 10px 20px; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -28,10 +26,6 @@
     <div id="presentation">
         <button class="close-btn" onclick="exitPresentation()">Sair</button>
         <div id="slideText"></div>
-        <div class="controls">
-            <button onclick="prevSlide()">&#8592; Anterior</button>
-            <button onclick="nextSlide()">Próximo &#8594;</button>
-        </div>
     </div>
 
     <script>
@@ -40,7 +34,6 @@
 
         function startPresentation() {
             const text = document.getElementById('lyricsInput').value;
-            // Divide o texto por quebras de linha duplas (parágrafos)
             slides = text.split(/\n\s*\n/).filter(s => s.trim() !== '');
             if (slides.length === 0) return alert('Por favor, insira alguma letra.');
             
@@ -49,7 +42,6 @@
             document.getElementById('presentation').style.display = 'flex';
             updateSlide();
             
-            // Coloca a tela em Fullscreen (ideal para Smart View/Chromecast)
             if (document.documentElement.requestFullscreen) {
                 document.documentElement.requestFullscreen();
             }
@@ -58,6 +50,14 @@
         function updateSlide() {
             document.getElementById('slideText').innerText = slides[currentSlide];
         }
+
+        // Detectar setas do teclado
+        document.addEventListener('keydown', (event) => {
+            if (document.getElementById('presentation').style.display === 'flex') {
+                if (event.key === 'ArrowRight') nextSlide();
+                if (event.key === 'ArrowLeft') prevSlide();
+            }
+        });
 
         function nextSlide() {
             if (currentSlide < slides.length - 1) {
@@ -81,7 +81,6 @@
             }
         }
 
-        // Registrar o Service Worker para funcionar offline
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js');
         }
