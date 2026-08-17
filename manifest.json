@@ -1,0 +1,15 @@
+{
+  "name": "Letras Cast",
+  "short_name": "Letras Cast",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#007bff",
+  "icons": [
+    {
+      "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Play-circle-fill_%28Bootstrap%29.svg/512px-Play-circle-fill_%28Bootstrap%29.svg.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
