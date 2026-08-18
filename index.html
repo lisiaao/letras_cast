@@ -13,9 +13,15 @@
         button { padding: 15px; background-color: #007bff; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; flex: 1; }
         .btn-secondary { background-color: #444; }
         .btn-danger { background-color: #d9534f; }
+        
+        /* Estilos da tela de apresentação */
         #presentation { display: none; flex-direction: column; justify-content: center; align-items: center; height: 100vh; position: absolute; top: 0; left: 0; width: 100%; background-color: black; text-align: center; padding: 40px; box-sizing: border-box; }
-        #slideText { font-size: 5vh; font-weight: bold; line-height: 1.3; }
-        .close-btn { position: absolute; top: 20px; right: 20px; background-color: #333; padding: 10px 20px; font-size: 14px; }
+        #slideText { font-size: 5vh; font-weight: bold; line-height: 1.3; transition: font-size 0.2s ease-in-out; }
+        
+        /* Botões flutuantes na apresentação */
+        .close-btn { position: absolute; top: 20px; right: 20px; background-color: #333; padding: 10px 20px; font-size: 14px; width: auto; flex: none; }
+        .zoom-controls { position: absolute; top: 20px; left: 20px; display: flex; gap: 10px; }
+        .zoom-btn { background-color: #333; padding: 10px 15px; font-size: 16px; width: auto; flex: none; }
     </style>
 </head>
 <body>
@@ -31,6 +37,10 @@
     </div>
 
     <div id="presentation">
+        <div class="zoom-controls">
+            <button class="zoom-btn" onclick="zoomIn()">A+</button>
+            <button class="zoom-btn" onclick="zoomOut()">A-</button>
+        </div>
         <button class="close-btn" onclick="exitPresentation()">Sair</button>
         <div id="slideText"></div>
     </div>
@@ -38,6 +48,7 @@
     <script>
         let slides = [];
         let currentSlide = 0;
+        let currentFontSize = 5; // Tamanho inicial da fonte em vh
 
         async function pasteLyrics() {
             try {
@@ -58,6 +69,10 @@
             if (slides.length === 0) return alert('Cole uma letra primeiro!');
             
             currentSlide = 0;
+            // Reseta o tamanho da fonte sempre que iniciar uma nova apresentação
+            currentFontSize = 5; 
+            document.getElementById('slideText').style.fontSize = currentFontSize + 'vh';
+            
             document.getElementById('setup').style.display = 'none';
             document.getElementById('presentation').style.display = 'flex';
             updateSlide();
@@ -71,10 +86,26 @@
             document.getElementById('slideText').innerText = slides[currentSlide];
         }
 
+        // Funções de Zoom
+        function zoomIn() {
+            currentFontSize += 0.5; // Aumenta um pouco
+            document.getElementById('slideText').style.fontSize = currentFontSize + 'vh';
+        }
+
+        function zoomOut() {
+            if (currentFontSize > 2) { // Evita que a letra fique invisível de tão pequena
+                currentFontSize -= 0.5; // Diminui um pouco
+                document.getElementById('slideText').style.fontSize = currentFontSize + 'vh';
+            }
+        }
+
+        // Controles de Teclado
         document.addEventListener('keydown', (event) => {
             if (document.getElementById('presentation').style.display === 'flex') {
                 if (event.key === 'ArrowRight') nextSlide();
                 if (event.key === 'ArrowLeft') prevSlide();
+                if (event.key === '+' || event.key === '=') zoomIn();
+                if (event.key === '-') zoomOut();
             }
         });
 
