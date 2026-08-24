@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Letras Cast - Medleys</title>
+    <title>Letras Cast</title>
     <link rel="manifest" href="manifest.json">
     <style>
         body { font-family: sans-serif; background-color: #121212; color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
-        #setup { display: flex; flex-direction: column; flex-grow: 1; gap: 10px; }
-        .search-box { display: flex; gap: 10px; flex-wrap: wrap; }
-        input { flex: 1; padding: 15px; border-radius: 8px; border: none; font-size: 16px; background-color: #1e1e1e; color: white; min-width: 120px; }
-        textarea { flex-grow: 1; padding: 15px; border-radius: 8px; border: none; font-size: 16px; background-color: #1e1e1e; color: white; resize: none; margin-top: 5px; }
-        .controls-setup { display: flex; gap: 10px; }
+        #setup { display: flex; flex-direction: column; flex-grow: 1; gap: 15px; }
+        textarea { flex-grow: 1; padding: 15px; border-radius: 8px; border: none; font-size: 16px; background-color: #1e1e1e; color: white; resize: none; }
+        .controls-setup { display: flex; gap: 15px; }
         button { padding: 15px; background-color: #007bff; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; flex: 1; z-index: 10; }
         .btn-secondary { background-color: #444; }
         .btn-danger { background-color: #d9534f; }
-        .btn-add { background-color: #28a745; }
         
+        /* Estilos da tela de apresentação */
         #presentation { display: none; flex-direction: column; justify-content: center; align-items: center; height: 100vh; position: absolute; top: 0; left: 0; width: 100%; background-color: black; text-align: center; padding: 40px; box-sizing: border-box; cursor: pointer; user-select: none; }
-        #slideText { font-size: 5vh; font-weight: bold; line-height: 1.3; transition: font-size 0.2s; pointer-events: none; }
+        #slideText { font-size: 5vh; font-weight: bold; line-height: 1.3; transition: font-size 0.2s ease-in-out; pointer-events: none; }
+        
+        /* Botões flutuantes na apresentação */
         .close-btn { position: absolute; top: 20px; right: 20px; background-color: #333; padding: 10px 20px; font-size: 14px; width: auto; flex: none; }
         .zoom-controls { position: absolute; top: 20px; left: 20px; display: flex; gap: 10px; }
         .zoom-btn { background-color: #333; padding: 10px 15px; font-size: 16px; width: auto; flex: none; }
@@ -27,19 +27,12 @@
 <body>
 
     <div id="setup">
-        <h2>Modo Medley</h2>
-        <div class="search-box">
-            <input type="text" id="artistInput" placeholder="Artista">
-            <input type="text" id="songInput" placeholder="Música">
-            <button class="btn-add" onclick="searchAndAdd()">Buscar Online</button>
-        </div>
-        
+        <h2>Letras Cast</h2>
+        <textarea id="lyricsInput" placeholder="Cole a letra aqui (pule linhas para separar os slides)..."></textarea>
         <div class="controls-setup">
-            <button class="btn-secondary" onclick="pasteAndAdd()">Colar (Letras.mus)</button>
-            <button class="btn-danger" onclick="clearLyrics()">Limpar Tudo</button>
+            <button class="btn-secondary" onclick="pasteLyrics()">Colar</button>
+            <button class="btn-danger" onclick="clearLyrics()">Apagar</button>
         </div>
-        
-        <textarea id="lyricsInput" placeholder="Seu medley será montado aqui. Adicione várias músicas..."></textarea>
         <button onclick="startPresentation()">Iniciar Apresentação</button>
     </div>
 
@@ -57,54 +50,23 @@
         let currentSlide = 0;
         let currentFontSize = 5;
 
-        // Função que junta a nova letra ao medley existente
-        function appendToMedley(newText) {
-            const textarea = document.getElementById('lyricsInput');
-            if (textarea.value.trim() !== '') {
-                textarea.value += '\n\n' + newText; // Adiciona espaço entre as músicas
-            } else {
-                textarea.value = newText;
-            }
-        }
-
-        async function searchAndAdd() {
-            const artist = document.getElementById('artistInput').value.trim();
-            const song = document.getElementById('songInput').value.trim();
-            if (!artist || !song) return alert('Preencha Artista e Música.');
-            
-            try {
-                const response = await fetch(`https://api.lyrics.ovh/v1/${artist}/${song}`);
-                const data = await response.json();
-                if (data.lyrics) {
-                    appendToMedley(data.lyrics);
-                    alert('Música adicionada ao medley!');
-                } else {
-                    alert('Não encontrada. Use o botão de colar.');
-                }
-            } catch (e) {
-                alert('Erro na API. Use o botão de colar.');
-            }
-        }
-
-        async function pasteAndAdd() {
+        async function pasteLyrics() {
             try {
                 const text = await navigator.clipboard.readText();
-                appendToMedley(text);
+                document.getElementById('lyricsInput').value = text;
             } catch (err) {
-                alert('Para colar, segure na caixa de texto.');
+                alert('Para colar, toque e segure na caixa de texto e escolha "Colar".');
             }
         }
 
         function clearLyrics() {
             document.getElementById('lyricsInput').value = '';
-            document.getElementById('artistInput').value = '';
-            document.getElementById('songInput').value = '';
         }
 
         function startPresentation() {
             const text = document.getElementById('lyricsInput').value;
             slides = text.split(/\n\s*\n/).filter(s => s.trim() !== '');
-            if (slides.length === 0) return alert('Adicione uma letra primeiro!');
+            if (slides.length === 0) return alert('Cole uma letra primeiro!');
             
             currentSlide = 0;
             currentFontSize = 5; 
@@ -114,21 +76,44 @@
             document.getElementById('presentation').style.display = 'flex';
             updateSlide();
             
-            if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            }
         }
 
         function updateSlide() {
             document.getElementById('slideText').innerText = slides[currentSlide];
         }
 
-        function zoomIn() { currentFontSize += 0.5; document.getElementById('slideText').style.fontSize = currentFontSize + 'vh'; }
-        function zoomOut() { if (currentFontSize > 2) { currentFontSize -= 0.5; document.getElementById('slideText').style.fontSize = currentFontSize + 'vh'; } }
+        // Funções de Zoom
+        function zoomIn() {
+            currentFontSize += 0.5;
+            document.getElementById('slideText').style.fontSize = currentFontSize + 'vh';
+        }
 
+        function zoomOut() {
+            if (currentFontSize > 2) {
+                currentFontSize -= 0.5;
+                document.getElementById('slideText').style.fontSize = currentFontSize + 'vh';
+            }
+        }
+
+        // Controle por Toque na Tela (Metade direita avança, metade esquerda volta)
         document.getElementById('presentation').addEventListener('click', function(event) {
+            // Ignora o clique se o usuário tocou em um botão
             if (event.target.tagName === 'BUTTON') return;
-            event.clientX > window.innerWidth / 2 ? nextSlide() : prevSlide();
+
+            const screenWidth = window.innerWidth;
+            const clickX = event.clientX;
+
+            if (clickX > screenWidth / 2) {
+                nextSlide();
+            } else {
+                prevSlide();
+            }
         });
 
+        // Controles de Teclado (Mantidos)
         document.addEventListener('keydown', (event) => {
             if (document.getElementById('presentation').style.display === 'flex') {
                 if (event.key === 'ArrowRight') nextSlide();
@@ -138,16 +123,31 @@
             }
         });
 
-        function nextSlide() { if (currentSlide < slides.length - 1) { currentSlide++; updateSlide(); } }
-        function prevSlide() { if (currentSlide > 0) { currentSlide--; updateSlide(); } }
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
         function exitPresentation() {
             document.getElementById('presentation').style.display = 'none';
             document.getElementById('setup').style.display = 'flex';
-            if (document.fullscreenElement) document.exitFullscreen();
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            }
         }
 
-        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
     </script>
 </body>
 </html>
-
