@@ -3,45 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Letras Cast</title>
+    <title>Letras Cast - Medleys</title>
     <link rel="manifest" href="manifest.json">
     <style>
         body { font-family: sans-serif; background-color: #121212; color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
-        #setup { display: flex; flex-direction: column; flex-grow: 1; gap: 15px; }
-        textarea { flex-grow: 1; padding: 15px; border-radius: 8px; border: none; font-size: 16px; background-color: #1e1e1e; color: white; resize: none; }
-        .controls-setup { display: flex; gap: 15px; }
+        #setup { display: flex; flex-direction: column; flex-grow: 1; gap: 10px; }
+        .search-box { display: flex; gap: 10px; flex-wrap: wrap; }
+        input { flex: 1; padding: 15px; border-radius: 8px; border: none; font-size: 16px; background-color: #1e1e1e; color: white; min-width: 120px; }
+        textarea { flex-grow: 1; padding: 15px; border-radius: 8px; border: none; font-size: 16px; background-color: #1e1e1e; color: white; resize: none; margin-top: 5px; }
+        .controls-setup { display: flex; gap: 10px; }
         button { padding: 15px; background-color: #007bff; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; flex: 1; z-index: 10; }
         .btn-secondary { background-color: #444; }
         .btn-danger { background-color: #d9534f; }
+        .btn-add { background-color: #28a745; }
         
         /* Estilos da tela de apresentação */
         #presentation { display: none; flex-direction: column; justify-content: center; align-items: center; height: 100vh; position: absolute; top: 0; left: 0; width: 100%; background-color: black; text-align: center; padding: 40px; box-sizing: border-box; cursor: pointer; user-select: none; }
-        #slideText { font-size: 5vh; font-weight: bold; line-height: 1.3; transition: font-size 0.2s ease-in-out; pointer-events: none; }
+        #slideText { font-size: 5vh; font-weight: bold; line-height: 1.3; transition: font-size 0.2s; pointer-events: none; }
         
-        /* Botões flutuantes na apresentação */
-        .close-btn { position: absolute; top: 20px; right: 20px; background-color: #333; padding: 10px 20px; font-size: 14px; width: auto; flex: none; }
-        .zoom-controls { position: absolute; top: 20px; left: 20px; display: flex; gap: 10px; }
-        .zoom-btn { background-color: #333; padding: 10px 15px; font-size: 16px; width: auto; flex: none; }
+        /* Estilos do Menu de 3 pontinhos */
+        .menu-container { position: absolute; top: 20px; right: 20px; z-index: 100; }
+        .menu-btn { background-color: transparent; color: white; border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 28px; display: flex; justify-content: center; align-items: center; padding: 0; flex: none; transition: background 0.3s; }
+        .menu-btn:hover { background-color: rgba(255, 255, 255, 0.1); }
+        .dropdown-content { display: none; position: absolute; right: 0; top: 60px; background-color: #222; min-width: 240px; border-radius: 12px; box-shadow: 0px 10px 30px rgba(0,0,0,0.8); overflow: hidden; flex-direction: column; }
+        .dropdown-content.show { display: flex; }
+        .menu-item { background: none; color: white; padding: 20px; text-align: left; border: none; width: 100%; font-size: 16px; cursor: pointer; border-radius: 0; flex: none; font-weight: normal; border-bottom: 1px solid #333; }
+        .menu-item:last-child { border-bottom: none; }
+        .menu-item:hover { background-color: #383838; }
+        .danger-text { color: #ff4d4d; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div id="setup">
-        <h2>Letras Cast</h2>
-        <textarea id="lyricsInput" placeholder="Cole a letra aqui (pule linhas para separar os slides)..."></textarea>
-        <div class="controls-setup">
-            <button class="btn-secondary" onclick="pasteLyrics()">Colar</button>
-            <button class="btn-danger" onclick="clearLyrics()">Apagar</button>
+        <h2>Modo Medley</h2>
+        <div class="search-box">
+            <input type="text" id="artistInput" placeholder="Artista">
+            <input type="text" id="songInput" placeholder="Música">
+            <button class="btn-add" onclick="searchAndAdd()">Buscar Online</button>
         </div>
+        
+        <div class="controls-setup">
+            <button class="btn-secondary" onclick="pasteAndAdd()">Colar Letra</button>
+            <button class="btn-danger" onclick="clearLyrics()">Limpar Tudo</button>
+        </div>
+        
+        <textarea id="lyricsInput" placeholder="Seu medley será montado aqui. Adicione várias músicas..."></textarea>
         <button onclick="startPresentation()">Iniciar Apresentação</button>
     </div>
 
     <div id="presentation">
-        <div class="zoom-controls">
-            <button class="zoom-btn" onclick="zoomIn()">A+</button>
-            <button class="zoom-btn" onclick="zoomOut()">A-</button>
+        <!-- O Novo Menu -->
+        <div class="menu-container">
+            <button class="menu-btn" onclick="toggleMenu(event)">&#8942;</button>
+            <div id="presentationMenu" class="dropdown-content">
+                <button class="menu-item" onclick="zoomIn(event)">Aumentar Letra (A+)</button>
+                <button class="menu-item" onclick="zoomOut(event)">Diminuir Letra (A-)</button>
+                <button class="menu-item danger-text" onclick="exitPresentation(event)">Sair da Apresentação</button>
+            </div>
         </div>
-        <button class="close-btn" onclick="exitPresentation()">Sair</button>
         <div id="slideText"></div>
     </div>
 
@@ -50,23 +70,56 @@
         let currentSlide = 0;
         let currentFontSize = 5;
 
-        async function pasteLyrics() {
+        // Adiciona texto ao medley
+        function appendToMedley(newText) {
+            const textarea = document.getElementById('lyricsInput');
+            if (textarea.value.trim() !== '') {
+                textarea.value += '\n\n' + newText;
+            } else {
+                textarea.value = newText;
+            }
+        }
+
+        // Chama o SEU servidor Vercel (Python)
+        async function searchAndAdd() {
+            const artist = document.getElementById('artistInput').value.trim();
+            const song = document.getElementById('songInput').value.trim();
+            if (!artist || !song) return alert('Preencha Artista e Música.');
+            
+            try {
+                const response = await fetch(`/api/buscar?artista=${encodeURIComponent(artist)}&musica=${encodeURIComponent(song)}`);
+                const data = await response.json();
+                
+                if (data.lyrics) {
+                    appendToMedley(data.lyrics);
+                    alert('Música adicionada ao medley!');
+                } else {
+                    alert('Não encontrada. Use o botão de colar.');
+                }
+            } catch (e) {
+                alert('Erro na API. Use o botão de colar.');
+            }
+        }
+
+        async function pasteAndAdd() {
             try {
                 const text = await navigator.clipboard.readText();
-                document.getElementById('lyricsInput').value = text;
+                appendToMedley(text);
             } catch (err) {
-                alert('Para colar, toque e segure na caixa de texto e escolha "Colar".');
+                alert('Para colar, segure na caixa de texto.');
             }
         }
 
         function clearLyrics() {
             document.getElementById('lyricsInput').value = '';
+            document.getElementById('artistInput').value = '';
+            document.getElementById('songInput').value = '';
         }
 
         function startPresentation() {
             const text = document.getElementById('lyricsInput').value;
             slides = text.split(/\n\s*\n/).filter(s => s.trim() !== '');
-            if (slides.length === 0) return alert('Cole uma letra primeiro!');
+            if (slides.length === 0) return alert('Adicione uma letra primeiro!');
             
             currentSlide = 0;
             currentFontSize = 5; 
@@ -76,44 +129,48 @@
             document.getElementById('presentation').style.display = 'flex';
             updateSlide();
             
-            if (document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen();
-            }
+            if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
         }
 
         function updateSlide() {
             document.getElementById('slideText').innerText = slides[currentSlide];
         }
 
-        // Funções de Zoom
-        function zoomIn() {
-            currentFontSize += 0.5;
-            document.getElementById('slideText').style.fontSize = currentFontSize + 'vh';
+        // Funções do Menu
+        function toggleMenu(event) {
+            event.stopPropagation(); // Evita que o slide avance ao clicar no botão
+            document.getElementById("presentationMenu").classList.toggle("show");
         }
 
-        function zoomOut() {
-            if (currentFontSize > 2) {
-                currentFontSize -= 0.5;
-                document.getElementById('slideText').style.fontSize = currentFontSize + 'vh';
-            }
+        function zoomIn(event) { if(event) event.stopPropagation(); currentFontSize += 0.5; document.getElementById('slideText').style.fontSize = currentFontSize + 'vh'; }
+        function zoomOut(event) { if(event) event.stopPropagation(); if (currentFontSize > 2) { currentFontSize -= 0.5; document.getElementById('slideText').style.fontSize = currentFontSize + 'vh'; } }
+        
+        function exitPresentation(event) {
+            if(event) event.stopPropagation();
+            document.getElementById('presentation').style.display = 'none';
+            document.getElementById('setup').style.display = 'flex';
+            document.getElementById("presentationMenu").classList.remove("show"); // Fecha o menu para a próxima vez
+            if (document.fullscreenElement) document.exitFullscreen();
         }
 
-        // Controle por Toque na Tela (Metade direita avança, metade esquerda volta)
+        // Controle por Toque na Tela
         document.getElementById('presentation').addEventListener('click', function(event) {
-            // Ignora o clique se o usuário tocou em um botão
-            if (event.target.tagName === 'BUTTON') return;
-
-            const screenWidth = window.innerWidth;
-            const clickX = event.clientX;
-
-            if (clickX > screenWidth / 2) {
-                nextSlide();
-            } else {
-                prevSlide();
+            const menu = document.getElementById("presentationMenu");
+            
+            // Se o menu estiver aberto e o clique não foi nele, apenas fecha o menu
+            if (menu.classList.contains('show') && !event.target.closest('.menu-container')) {
+                menu.classList.remove('show');
+                return; 
             }
+
+            // Ignora cliques nos botões do menu
+            if (event.target.closest('.menu-container')) return;
+
+            // Lógica de avançar/voltar o slide (Direita avança, Esquerda volta)
+            event.clientX > window.innerWidth / 2 ? nextSlide() : prevSlide();
         });
 
-        // Controles de Teclado (Mantidos)
+        // Controles de Teclado
         document.addEventListener('keydown', (event) => {
             if (document.getElementById('presentation').style.display === 'flex') {
                 if (event.key === 'ArrowRight') nextSlide();
@@ -123,31 +180,10 @@
             }
         });
 
-        function nextSlide() {
-            if (currentSlide < slides.length - 1) {
-                currentSlide++;
-                updateSlide();
-            }
-        }
+        function nextSlide() { if (currentSlide < slides.length - 1) { currentSlide++; updateSlide(); } }
+        function prevSlide() { if (currentSlide > 0) { currentSlide--; updateSlide(); } }
 
-        function prevSlide() {
-            if (currentSlide > 0) {
-                currentSlide--;
-                updateSlide();
-            }
-        }
-
-        function exitPresentation() {
-            document.getElementById('presentation').style.display = 'none';
-            document.getElementById('setup').style.display = 'flex';
-            if (document.fullscreenElement) {
-                document.exitFullscreen();
-            }
-        }
-
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
     </script>
 </body>
 </html>
